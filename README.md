@@ -1,46 +1,44 @@
 # homebrew-dbdiff
 
-[Homebrew](https://brew.sh) tap for [DBDiff](https://github.com/DBDiff/DBDiff) — the database diff and migration tool for MySQL, Postgres, and SQLite.
+[Homebrew](https://brew.sh) tap for [DBDiff](https://github.com/DBDiff/DBDiff):
+diff MySQL, PostgreSQL and SQLite databases and generate migrations. It
+installs DBDiff's self-contained binary — no PHP needed — on macOS and Linux,
+Apple Silicon, Intel and ARM.
 
 ## Install
 
 ```bash
-brew tap DBDiff/dbdiff
-brew install dbdiff
+brew install dbdiff/dbdiff/dbdiff
 ```
+
+or `brew tap dbdiff/dbdiff` then `brew install dbdiff`.
 
 ## Usage
 
 ```bash
-# Diff two MySQL schemas
-dbdiff user:pass@host:3306 db1:db2
+# Schema and data, Postgres to Postgres, from connection strings
+dbdiff diff --server1-url postgres://user:pass@host:5432/staging \
+            --server2-url postgres://user:pass@host:5432/production \
+            --type=all --include=both --output=migration.sql
 
-# Diff two Postgres schemas (full DSN)
-dbdiff --server1-url postgres://user:pass@host:5432/db1 \
-       --server2-url postgres://user:pass@host:5432/db2
+# MySQL, two databases on one server
+dbdiff diff --server1=user:pass@localhost:3306 --type=schema app_dev:app_prod
 
-# Supabase shorthand
-dbdiff --supabase --server1=user:pass@db.abc.supabase.co:5432 db1:db2
-
-# Generate a migration file in a specific format
-dbdiff --format=laravel user:pass@host:3306 db1:db2
+# SQLite files
+dbdiff diff --server1-url sqlite:///path/to/a.db --server2-url sqlite:///path/to/b.db
 ```
+
+`dbdiff diff --help` lists every option. See the
+[DBDiff README](https://github.com/DBDiff/DBDiff#readme) for the rest.
 
 ## Upgrade
 
 ```bash
-brew upgrade dbdiff
+brew update && brew upgrade dbdiff
 ```
 
-## Uninstall
+The formula follows DBDiff's releases automatically.
 
-```bash
-brew uninstall dbdiff
-brew untap DBDiff/dbdiff
-```
+## License
 
-## More information
-
-- **GitHub:** https://github.com/DBDiff/DBDiff
-- **npm:** `npm install -g @dbdiff/cli`
-- **Issues:** https://github.com/DBDiff/DBDiff/issues
+MIT
