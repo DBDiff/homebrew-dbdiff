@@ -1,0 +1,62 @@
+name: Update formula
+
+# Follows DBDiff's releases: daily, or on demand for a given version. Until a
+# stable release exists the newest pre-release is used; after that, only
+# stable releases — the same rule as npm's `latest` tag for @dbdiff/cli.
+on:
+  schedule:
+    - cron: '0 5 * * *'
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'DBDiff version, no "v" (empty: the newest as above)'
+        required: false
+
+permissions:
+  contents: write
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    outputs:
+      changed: ${{ steps.commit.outputs.changed }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Pick the version
+        id: pick
+        env:
+          GH_TOKEN: ${{ github.token }}
+          WANTED: ${{ inputs.version }}
+        run: |
+          if [ -n "$WANTED" ]; then
+            version="$WANTED"
+          else
+            releases="$(gh api repos/DBDiff/DBDiff/releases --jq '[.[] | select(.draft | not)]')"
+            version="$(jq -r '[.[] | select(.prerelease | not)][0].tag_name // empty' <<< "$releases")"
+            [ -n "$version" ] || version="$(jq -r '.[0].tag_name' <<< "$releases")"
+            version="${version#v}"
+          fi
+          current="$(sed -n 's/^  version "\(.*\)"$/\1/p' Formula/dbdiff.rb)"
+          echo "current $current, wanted $version"
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          [ "$version" != "$current" ] && echo "update=true" >> "$GITHUB_OUTPUT" || true
+
+      - name: Rewrite the formula
+        if: steps.pick.outputs.update == 'true'
+        run: scripts/update-formula.sh "${{ steps.pick.outputs.version }}"
+
+      - name: Commit
+        id: commit
+        if: steps.pick.outputs.update == 'true'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git commit -am "dbdiff ${{ steps.pick.outputs.version }}"
+          git push
+          echo "changed=true" >> "$GITHUB_OUTPUT"
+
+  test:
+    needs: update
+    if: needs.update.outputs.changed == 'true'
+    uses: ./.github/workflows/test.yml

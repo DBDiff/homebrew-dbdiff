@@ -1,0 +1,35 @@
+name: Test
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_call:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  install:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [macos-latest, macos-15-intel, ubuntu-latest, ubuntu-24.04-arm]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # A PR tests itself; a push or the updater tests main as it now is.
+          ref: ${{ github.event.pull_request.head.sha || 'main' }}
+
+      - name: Set up Homebrew
+        uses: Homebrew/actions/setup-homebrew@main
+
+      - name: Install from this tap and test
+        run: |
+          brew tap-new --no-git local/test >/dev/null
+          cp Formula/dbdiff.rb "$(brew --repository local/test)/Formula/"
+          brew install local/test/dbdiff
+          brew test local/test/dbdiff
+          dbdiff --version

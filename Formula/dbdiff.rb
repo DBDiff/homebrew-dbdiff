@@ -1,56 +1,38 @@
+# Written by scripts/update-formula.sh — edit that, not this.
 class Dbdiff < Formula
-  desc "Compare MySQL, Postgres or SQLite databases & generate schema/data migrations"
+  desc "Diff MySQL, PostgreSQL and SQLite databases and generate migrations"
   homepage "https://github.com/DBDiff/DBDiff"
+  version "3.0.0-rc.27"
   license "MIT"
-  version "2.0.0"
 
-  # ── Platform-specific binary downloads ──────────────────────────────────────
-  # ── Platform-specific binary downloads ──────────────────────────────────────
-  #
-  # SHA256 values are stamped by scripts/update-homebrew-formula.sh after each
-  # GitHub release is published.  Run:
-  #
-  #   scripts/update-homebrew-formula.sh 2.0.1 ../homebrew-dbdiff
-  #
+  # A self-contained static binary per platform: PHP and DBDiff in one file.
   on_macos do
     on_arm do
       url "https://github.com/DBDiff/DBDiff/releases/download/v#{version}/dbdiff-darwin-arm64"
-      sha256 "PLACEHOLDER_darwin_arm64" # bumped by update-homebrew-formula.sh
+      sha256 "f62cb84c35787526e2f596abb3aa1a98f10e67b984b99316221bac08f5b575e3"
     end
     on_intel do
       url "https://github.com/DBDiff/DBDiff/releases/download/v#{version}/dbdiff-darwin-x64"
-      sha256 "PLACEHOLDER_darwin_x64" # bumped by update-homebrew-formula.sh
+      sha256 "759f1661e1acb16f8c2369ae2dfa96dc3dd73afee5c41ce55352ce57ec192565"
     end
   end
 
   on_linux do
     on_arm do
       url "https://github.com/DBDiff/DBDiff/releases/download/v#{version}/dbdiff-linux-arm64"
-      sha256 "PLACEHOLDER_linux_arm64" # bumped by update-homebrew-formula.sh
+      sha256 "dc562dc2cc6bf9c8f8d616f974d4f19d947e5c393354cfd9869b8415aab31ae9"
     end
     on_intel do
       url "https://github.com/DBDiff/DBDiff/releases/download/v#{version}/dbdiff-linux-x64"
-      sha256 "PLACEHOLDER_linux_x64" # bumped by update-homebrew-formula.sh
+      sha256 "85444249d9db0d029bfeafae7379cca98e435d9f9306c2b16e355be80cfea492"
     end
   end
 
-  # No compilation — the binary is a fully self-contained static executable
-  # (static PHP micro SAPI + DBDiff PHAR combined into a single file)
-  bottle :unneeded
-
   def install
-    # Determine the asset filename downloaded by Homebrew for this platform
-    asset = if OS.mac?
-      Hardware::CPU.arm? ? "dbdiff-darwin-arm64" : "dbdiff-darwin-x64"
-    else
-      Hardware::CPU.arm? ? "dbdiff-linux-arm64" : "dbdiff-linux-x64"
-    end
-
-    bin.install asset => "dbdiff"
+    bin.install Dir["dbdiff-*"].first => "dbdiff"
   end
 
   test do
-    output = shell_output("#{bin}/dbdiff --version")
-    assert_match "DBDiff #{version}", output
+    assert_match "DBDiff #{version}", shell_output("#{bin}/dbdiff --version")
   end
 end
